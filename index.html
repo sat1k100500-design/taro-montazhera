@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta property="og:title" content="Таро монтажера">
+</head>
+<body>
+<title>Таро монтажера</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500;1,600&family=Roboto+Condensed:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&family=Marck+Script&display=swap">
+<style>
+/* layout: same night sky as the natal chart (a series). Deck grid of face-down cards → three slots (проєкт / клієнт / гроші) that flip open → reading */
+:root{
+  --night:#11122b; --night2:#1a1b3d; --ink:#0b0c1f; --cream:#f3ede2; --dim:#a7a6c4; --line:rgba(243,237,226,.28);
+  --cyan:#6CEEF3; --pink:#F2B8CC; --hot:#FF5C97; --gold:#F5D58A;
+  --serif:'Playfair Display',Georgia,serif; --sans:'Roboto Condensed','Arial Narrow',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace; --script:'Marck Script',cursive;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--night);color:var(--cream);font-family:var(--sans);font-size:17px;
+  background-image:radial-gradient(1px 1px at 12% 18%,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 78% 9%,#fff6 50%,transparent 51%),
+  radial-gradient(1.5px 1.5px at 40% 70%,#fff5 50%,transparent 51%),radial-gradient(1px 1px at 88% 56%,#fff7 50%,transparent 51%),
+  radial-gradient(1px 1px at 22% 88%,#fff5 50%,transparent 51%),radial-gradient(1.5px 1.5px at 63% 33%,#fff4 50%,transparent 51%);
+  background-attachment:fixed;
+  padding-block:22px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:640px;margin:0 auto;display:grid;gap:24px}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+.brand{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:15px}
+.brand a{text-decoration:none;border-bottom:2px solid var(--cyan)}
+.brand a:last-child{border-color:var(--pink)}
+.brand i{font-family:var(--serif);color:var(--pink)}
+.eyebrow{font:500 13px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+h1{margin:6px 0 0;font-family:var(--serif);font-style:italic;font-weight:600;font-size:clamp(44px,12vw,72px);line-height:.95}
+h1 span{color:var(--pink)}
+.lead{margin:12px 0 0;color:var(--dim);font-size:18px;line-height:1.45;max-width:44ch}
+
+/* ---------- a tarot card ---------- */
+.tc{container-type:inline-size;position:relative;aspect-ratio:7/12;perspective:900px}
+.tc .flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,.9,.3,1)}
+.tc.open .flip{transform:rotateY(180deg)}
+.tc .face{position:absolute;inset:0;border-radius:6cqw;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.tc .back{background:#16173f;border:1px solid var(--gold);display:grid;place-items:center;
+  background-image:repeating-linear-gradient(45deg,rgba(245,213,138,.10) 0 1px,transparent 1px 9px),repeating-linear-gradient(-45deg,rgba(245,213,138,.10) 0 1px,transparent 1px 9px)}
+.tc .back::before{content:"";position:absolute;inset:5cqw;border:1px solid rgba(245,213,138,.55);border-radius:3cqw}
+.tc .back svg{width:62%;height:auto}
+.tc .back b{position:absolute;bottom:7cqw;font:500 7cqw var(--mono);letter-spacing:.2em;color:var(--gold)}
+.tc .front{transform:rotateY(180deg);background:linear-gradient(180deg,#1f2050,#121334);border:1px solid var(--gold);display:grid;grid-template-rows:auto 1fr auto;padding:7cqw 6cqw 8cqw;text-align:center}
+.tc .front::before{content:"";position:absolute;inset:3.5cqw;border:1px solid rgba(245,213,138,.4);border-radius:3cqw;pointer-events:none}
+.tc .num{font:600 italic 10cqw var(--serif);color:var(--gold)}
+.tc .art{display:grid;place-items:center}
+.tc .art svg{width:78%;height:auto}
+.tc .nm{font:800 9.5cqw/1.05 var(--sans);text-transform:uppercase;letter-spacing:.02em}
+.tc .nm small{display:block;font:400 6cqw var(--mono);letter-spacing:.06em;color:var(--dim);text-transform:none;margin-top:2cqw}
+
+/* deck */
+.panel{background:var(--night2);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:14px}
+.step{font:500 13px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.deck{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.deck button{all:unset;cursor:pointer;display:block;border-radius:8px;transition:transform .2s,opacity .3s}
+.deck button:hover{transform:translateY(-4px)}
+.deck button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+.deck button.taken{opacity:.12;pointer-events:none;transform:scale(.92)}
+.deck.done button:not(.taken){opacity:.35;pointer-events:none}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.btn-s{background:none;border:1.5px solid var(--line);color:var(--cream);border-radius:999px;padding:9px 16px;font:500 14px var(--mono);cursor:pointer}
+.count{font:500 14px var(--mono);color:var(--dim)}
+
+/* share block with the 3 slots (screenshot-ready) */
+.share{container-type:inline-size;border-radius:20px;border:1px solid var(--line);padding:5cqw 5cqw 4cqw;display:grid;gap:3cqw;
+  background:radial-gradient(120% 80% at 50% 40%,#23245a 0%,#14153a 55%,#0c0d24 100%)}
+.s-top{display:flex;justify-content:space-between;font:500 2.6cqw var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.s-title{font:600 italic 7cqw/1 var(--serif)}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:3.2cqw}
+.slot{display:grid;grid-template-columns:100%;gap:2cqw;justify-items:center}
+.slot .lab{font:500 2.6cqw var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+.slot .hole{width:100%;aspect-ratio:7/12;border:1.5px dashed rgba(245,213,138,.45);border-radius:2.4cqw;display:grid;place-items:center;font:400 2.6cqw var(--mono);color:var(--dim);text-align:center;padding:2cqw}
+.slot .tc{width:100%}
+.s-foot{display:flex;justify-content:space-between;align-items:end;font:400 2.5cqw var(--mono);color:var(--dim);border-top:1px solid var(--line);padding-top:2.4cqw}
+.s-foot b{font:400 4cqw var(--script);color:var(--pink)}
+
+.reading{display:grid;gap:10px}
+.reading h2{margin:0;font:600 italic 30px var(--serif)}
+.r{background:var(--night2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:6px}
+.r .k{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--cyan)}
+.r .n{font:600 italic 22px var(--serif);color:var(--gold)}
+.r .v{font-weight:500;font-size:18px;line-height:1.4}
+.r.sum{border-color:var(--pink)}
+.r.sum .v{font-weight:700}
+.hint{font:400 14px/1.5 var(--mono);color:var(--dim);margin:0}
+.cta{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:22px}
+.cta p{margin:0;font-size:18px;line-height:1.4}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-block;padding:13px 22px;border-radius:999px;font-weight:700;text-decoration:none;background:var(--cyan);color:var(--ink)}
+.btn.p2{background:transparent;color:var(--cream);border:2px solid var(--pink)}
+.foot{font:400 12px var(--mono);color:#77769a;margin:0}
+@media (max-width:420px){.deck{grid-template-columns:repeat(7,1fr);gap:5px}}
+.tc .nm{overflow-wrap:anywhere}
+@media (prefers-reduced-motion:reduce){.tc .flip,.deck button{transition:none}}
+
+/* ?shot=… — single 1080×1350 frames for the Threads post */
+body.shot{padding:0;background:var(--ink)}
+body.shot .wrap{display:none}
+#shot{display:none}
+body.shot #shot{display:grid;width:1080px;height:1350px;padding:70px 64px 56px;gap:36px;grid-template-rows:auto auto 1fr auto;
+  background:radial-gradient(120% 80% at 50% 45%,#23245a 0%,#14153a 55%,#0c0d24 100%)}
+#shot .s-top{font-size:24px}
+#shot h2{margin:0;font:600 italic 92px/0.95 var(--serif)}
+#shot h2 span{color:var(--pink)}
+#shot .row{display:grid;grid-template-columns:repeat(3,1fr);gap:34px;align-items:center}
+#shot .pickn{display:grid;grid-template-columns:100%;gap:30px;justify-items:center;text-align:center;font:600 italic 64px var(--serif);color:var(--gold)}
+#shot .pickn .tc{width:100%;filter:drop-shadow(0 24px 40px rgba(0,0,0,.45))}
+#shot .pickn:nth-child(1) .tc{transform:rotate(-7deg) translateY(18px)}
+#shot .pickn:nth-child(3) .tc{transform:rotate(7deg) translateY(18px)}
+#shot .pickn:nth-child(2) .tc{transform:translateY(-10px)}
+#shot .one .tc{width:100%}
+#shot .one{display:grid;grid-template-columns:430px 1fr;gap:48px;align-items:center}
+#shot .one .t{display:grid;gap:22px}
+#shot .one .k{font:500 26px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+#shot .one .v{font:700 44px/1.2 var(--sans)}
+#shot .one .a{font:500 32px/1.35 var(--sans);color:var(--dim)}
+#shot .sf{display:flex;justify-content:space-between;align-items:end;font:400 24px var(--mono);color:var(--dim);border-top:1px solid var(--line);padding-top:22px}
+#shot .sf b{font:400 44px var(--script);color:var(--pink)}
+</style>
+
+<div class="wrap">
+  <div class="brand">
+    <a href="https://t.me/shkolyarkavideo" target="_blank" rel="noopener">ТГК: збірник монтажерів ↗</a>
+    <a href="https://www.instagram.com/video_shkolyarka/" target="_blank" rel="noopener"><i>@video_shkolyarka</i> ↗</a>
+  </div>
+
+  <header>
+    <div class="eyebrow">✦ розклад на тиждень</div>
+    <h1>таро <span>монтажера</span></h1>
+    <p class="lead">задумай свій проєкт, видихни і витягни три карти. перша — про проєкт, друга — про клієнта, третя — про гроші.</p>
+  </header>
+
+  <section class="panel">
+    <div class="tools"><span class="step" id="step">обери 3 карти</span><span class="count" id="count">0 / 3</span></div>
+    <div class="deck" id="deck"></div>
+    <div class="tools"><button class="btn-s" id="shuffle" type="button">↺ перетасувати</button><span class="count">на столі 21 карта з 78</span></div>
+  </section>
+
+  <section class="share" id="share">
+    <div class="s-top"><span>таро монтажера</span><span id="sDate"></span></div>
+    <div class="s-title">мій розклад на тиждень</div>
+    <div class="slots">
+      <div class="slot"><span class="lab">проєкт</span><div class="hole" id="h0">тут буде перша карта</div></div>
+      <div class="slot"><span class="lab">клієнт</span><div class="hole" id="h1">друга</div></div>
+      <div class="slot"><span class="lab">гроші</span><div class="hole" id="h2">третя</div></div>
+    </div>
+    <div class="s-foot"><span>витягни свої:<br>таро монтажера ✦</span><b>@video_shkolyarka</b></div>
+  </section>
+
+  <section class="reading" id="reading" hidden>
+    <h2>що кажуть карти</h2>
+    <div id="rows" class="reading"></div>
+    <p class="hint">📸 зроби скрін розкладу, виклади в сторіс і познач <b style="color:var(--pink)">@video_shkolyarka</b> — я розберу найцікавіші</p>
+    <div class="cta">
+      <p>карти показують шлях, а клієнтів і прайс — розбираємо в каналі:</p>
+      <div class="btns">
+        <a class="btn" href="https://t.me/shkolyarkavideo" target="_blank" rel="noopener">телеграм-канал</a>
+        <a class="btn p2" href="https://www.instagram.com/video_shkolyarka/" target="_blank" rel="noopener">інстаграм</a>
+      </div>
+    </div>
+    <p class="foot">це гра, а не пророцтво. але передоплату все одно бери ✦</p>
+  </section>
+</div>
+
+<div id="shot"></div>
+
+<script>
+// ---- the deck: [roman, name, classic, svg-art, project, client, money] ----
+const G='#F5D58A', C='#6CEEF3', P='#F2B8CC';
+const S=(inner)=>`<svg viewBox="0 0 100 100" fill="none" stroke="${G}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+const DECK=[
+ ['0','Новачок','Блазень',S(`<path d="M30 78 L50 22 L70 78"/><path d="M38 58h24"/><circle cx="50" cy="18" r="4" fill="${P}" stroke="none"/><path d="M22 86h56" stroke="${C}"/>`),
+  'ти берешся за те, чого ще не вмієш — і саме так ростеш','клієнт прийде «на спробу» — зроби так, щоб залишився','перші гроші будуть маленькі. головне — не безкоштовні'],
+ ['I','Монтажер','Маг',S(`<rect x="18" y="40" width="64" height="40" rx="3"/><path d="M18 40l6-14h58l-6 14"/><path d="M34 26l-6 14M50 26l-6 14M66 26l-6 14"/><path d="M45 52l14 8-14 8z" fill="${C}" stroke="${C}"/>`),
+  'у тебе є все: футажі, скіли і хоткеї. просто почни','клієнт побачить твою магію з першого драфту','твої руки — твій капітал. рахуй години чесно'],
+ ['II','Таймлайн','Жриця',S(`<rect x="16" y="28" width="40" height="10" rx="3"/><rect x="30" y="46" width="54" height="10" rx="3" stroke="${P}"/><rect x="16" y="64" width="62" height="10" rx="3" stroke="${C}"/><path d="M62 20v64"/><path d="M57 18h10l-5 7z" fill="${G}"/>`),
+  'відповідь уже є на таймлайні — переглянь сирі футажі ще раз','клієнт не каже, чого хоче. питай референси','гроші ховаються в деталях ТЗ — уточни обсяг до старту'],
+ ['III','Клієнтка мрії','Імператриця',S(`<path d="M20 70L26 34l14 18 10-24 10 24 14-18 6 36z"/><path d="M20 78h60"/><circle cx="50" cy="26" r="3" fill="${P}" stroke="none"/>`),
+  'проєкт, який хочеться в портфоліо. вклади душу','прийде клієнтка, що не торгується і дякує голосовими','оплата вчасно і ще й бонус. так, буває'],
+ ['IV','Дедлайн','Імператор',S(`<circle cx="50" cy="54" r="28"/><path d="M50 54V36M50 54l12 8"/><path d="M28 24l-8 8M72 24l8 8"/><path d="M50 26v-6" stroke="${P}"/>`),
+  'структура рятує: план, чорновик, фінал. по годинах','клієнт з чіткими термінами — тримай слово, і він твій','за терміновість — +30%. не соромся писати це в прайсі'],
+ ['V','Наставник','Ієрофант',S(`<path d="M50 30C40 24 26 24 18 28v46c8-4 22-4 32 2 10-6 24-6 32-2V28c-8-4-22-4-32 2z"/><path d="M50 30v46"/><path d="M26 40h14M26 50h14M60 40h14M60 50h14" stroke="${C}"/>`),
+  'час вчитися: одна нова фішка змінить весь проєкт','клієнт прийде через рекомендацію — бережи репутацію','навчання окупиться з першого замовлення'],
+ ['VI','Матч-кат','Закохані',S(`<circle cx="40" cy="50" r="22"/><circle cx="60" cy="50" r="22" stroke="${P}"/><path d="M50 22v56" stroke-dasharray="4 5" stroke="${C}"/>`),
+  'склейка, після якої всі скажуть «вау». шукай рими в кадрах','ідеальний метч: ви з клієнтом бачите одне й те саме','співпраця надовго — обговори пакет на місяць'],
+ ['VII','Рендер','Колісниця',S(`<rect x="14" y="42" width="72" height="16" rx="8"/><rect x="18" y="46" width="60" height="8" rx="4" fill="${C}" stroke="none"/><path d="M30 30h40" stroke="${P}"/><text x="50" y="78" fill="${G}" stroke="none" font-family="IBM Plex Mono,monospace" font-size="14" text-anchor="middle">99%</text>`),
+  'рух уперед! але збережи проєкт перед експортом','клієнт поспішає — дай йому швидкість, а не знижку','гроші вже в дорозі. не зупиняйся на 99%'],
+ ['VIII','Передоплата','Сила',S(`<circle cx="50" cy="50" r="28"/><circle cx="50" cy="50" r="21" stroke="${P}"/><path d="M42 40c2-4 14-5 16 1 2 6-14 8-14 15 0 6 13 6 16 1M38 48h24M38 56h24" stroke="${C}"/>`),
+  'твоя сила — у межах. без ТЗ не стартуєш','клієнт перевірить, чи ти поступишся. не поступайся','50% наперед — і спиш спокійно'],
+ ['IX','Нічний монтаж','Відлюдник',S(`<rect x="22" y="44" width="48" height="30" rx="3"/><path d="M14 80h64"/><path d="M78 22a14 14 0 1 0 8 24 11 11 0 1 1-8-24z" fill="${P}" stroke="${P}"/>`),
+  'тиша, навушники, 3 ночі — і найкращий монтаж за місяць','клієнт напише о 23:00. можна відповісти зранку','не продавай сон дешево. нічна робота — дорожча'],
+ ['X','Алгоритм','Колесо фортуни',S(`<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="8"/><path d="M50 20v22M50 58v22M20 50h22M58 50h22M29 29l15 15M56 56l15 15M71 29L56 44M44 56L29 71" stroke="${C}"/>`),
+  'один рілс залетить сильніше, ніж ти думаєш','клієнт знайде тебе через випадковий пост','удача любить регулярність: пости щодня'],
+ ['XIII','Видалений проєкт','Смерть',S(`<path d="M24 20h44l10 10v50H24z"/><rect x="36" y="20" width="26" height="16"/><rect x="34" y="52" width="34" height="22" rx="2"/><path d="M40 57l22 12M62 57L40 69" stroke="${P}"/>`),
+  'кінець старого підходу. почни проєкт з чистого аркуша','з одним клієнтом пора попрощатися — і це на краще','звільнене місце займе дорожчий проєкт'],
+ ['XV','29 правок','Диявол',S(`<path d="M50 50c-8-12-28-12-28 0s20 12 28 0 28-12 28 0-20 12-28 0z"/><text x="50" y="82" fill="${P}" stroke="none" font-family="IBM Plex Mono,monospace" font-size="14" text-anchor="middle">v29</text>`),
+  'не застрягай у правках: зафіксуй кількість кіл у договорі','клієнт хоче «ще трошки». ти знаєш, що робити','кожна правка понад дві — платна. запиши це'],
+ ['XVI','Краш','Вежа',S(`<path d="M50 18L84 78H16z"/><path d="M54 34l-10 18h12l-10 16" stroke="${P}"/>`),
+  'програма впаде. автозбереження врятує. увімкни його зараз','раптова зміна від клієнта — прийми і перерахуй ціну','несподівані витрати: відклади на нову відеокарту'],
+ ['XVII','Вірусний рілс','Зірка',S(`<path d="M50 14l8 22 24 2-18 15 6 24-20-13-20 13 6-24-18-15 24-2z"/><path d="M45 44l12 7-12 7z" fill="${C}" stroke="${C}"/>`),
+  'твій монтаж побачать тисячі. зроби хук у перші 2 секунди','після вірусного відео прийдуть нові клієнти — будь готовий','мільйон переглядів = нагода підняти прайс'],
+ ['XVIII','Клієнт зник','Місяць',S(`<path d="M62 18a28 28 0 1 0 16 46A22 22 0 1 1 62 18z"/><path d="M30 76l6 6 10-12M44 76l6 6 10-12" stroke="${C}"/>`),
+  'не все так, як здається. перепитай ТЗ письмово','клієнт прочитав і мовчить. дай йому 2 дні — і нагадай','без передоплати ризикуєш. ти ж знаєш'],
+ ['XIX','Оплата прийшла','Сонце',S(`<circle cx="50" cy="50" r="18"/><path d="M50 16v10M50 74v10M16 50h10M74 50h10M26 26l7 7M67 67l7 7M74 26l-7 7M33 67l-7 7" stroke="${P}"/><path d="M44 44c2-3 11-3 12 1 1 5-11 6-11 11 0 5 10 5 12 1M41 50h18" stroke="${C}"/>`),
+  'проєкт буде легким і світлим. насолоджуйся процесом','клієнт задоволений з першого разу і пише відгук','гроші приходять вчасно. можна видихнути ☀️'],
+ ['XXI','Портфоліо','Світ',S(`<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="6"/><circle cx="50" cy="32" r="6"/><circle cx="50" cy="68" r="6"/><circle cx="32" cy="50" r="6"/><circle cx="68" cy="50" r="6"/><path d="M80 50c6 0 8 8 4 14" stroke="${P}"/>`),
+  'цей проєкт — у топ портфоліо. зніми бекстейдж','тебе знайдуть через портфоліо. онови його цього тижня','цикл завершено: час для нового рівня цін'],
+ // the four majors that complete the 22
+ ['XI','Договір','Справедливість',S(`<path d="M28 16h34l12 12v56H28z"/><path d="M62 16v12h12"/><path d="M36 40h28M36 50h28M36 60h18" stroke="${C}"/><path d="M40 74c4-6 8 4 12-2s6 2 10-1" stroke="${P}"/>`),
+  'чесно оціни обсяг — і проєкт піде рівно','клієнт поважає тих, хто працює за договором','справедлива ціна: рахуй години, а не «скільки не шкода»'],
+ ['XII','Чекаю фідбек','Повішений',S(`<path d="M32 16h36M32 84h36"/><path d="M36 16c0 18 28 22 28 34S36 66 36 84M64 16c0 18-28 22-28 34s28 16 28 34"/><circle cx="50" cy="70" r="4" fill="${P}" stroke="none"/><circle cx="50" cy="40" r="2.5" fill="${C}" stroke="none"/>`),
+  'пауза — не провал. подивись на проєкт свіжим оком','клієнт мовчить. дай час — і постав дедлайн на відповідь','гроші затримаються, але прийдуть. тримай план Б'],
+ ['XIV','Баланс звуку','Поміркованість',S(`<path d="M30 16v68M50 16v68M70 16v68" opacity=".6"/><rect x="24" y="30" width="12" height="9" rx="2" fill="${C}" stroke="${C}"/><rect x="44" y="56" width="12" height="9" rx="2" fill="${P}" stroke="${P}"/><rect x="64" y="40" width="12" height="9" rx="2" fill="${G}"/>`),
+  'знайди баланс: голос, музика, тиша. і робота, і відпочинок','з клієнтом — золота середина: не прогинайся і не тисни','рівномірний дохід краще за один великий і два порожні місяці'],
+ ['XX','Відгук','Суд',S(`<path d="M50 18l6 13 14 2-10 10 2 14-12-7-12 7 2-14-10-10 14-2z"/><path d="M22 66h56M22 76h40" stroke="${C}"/><path d="M70 74l6 6 10-12" stroke="${P}"/>`),
+  'час підбити підсумки: що в цьому проєкті вийшло найкраще?','попроси відгук — клієнт напише, якщо попросиш','хороші відгуки = право підняти прайс'],
+];
+// ---- minor arcana: 4 suits × 14, pips drawn like a real tarot ----
+const SUITS=[
+  ['Таймлайни','Таймлайнів','Жезлів','енергія, швидкість, дія',`<rect x="2" y="7" width="16" height="6" rx="2"/><path d="M12 3v14" stroke="${P}"/>`],
+  ['Кави','Кав','Кубків','натхнення і настрій',`<path d="M4 6h10v6a5 5 0 0 1-10 0z"/><path d="M14 8h2a2 2 0 0 1 0 4h-2"/><path d="M7 1c-1 2 1 2 0 4M11 1c-1 2 1 2 0 4" stroke="${C}"/>`],
+  ['Ножиці','Ножиць','Мечів','рішення, склейки, суперечки',`<circle cx="5" cy="15" r="3"/><circle cx="15" cy="15" r="3"/><path d="M7 13L16 2M13 13L4 2" stroke="${C}"/>`],
+  ['Гривні','Гривень','Пентаклів','гроші і стабільність',`<circle cx="10" cy="10" r="8"/><path d="M7 7c1-2 6-2 6 0 0 3-6 3-6 6 0 2 5 2 6 0M6 9h8M6 11h8" stroke="${C}" stroke-width="1.4"/>`],
+];
+const RANKS=[
+  ['Туз','Туз','новий старт: бери проєкт, навіть якщо страшно','на горизонті новий клієнт — відповідай швидко','новий потік грошей починається з одного рахунку'],
+  ['Двійка','Двійка','вибір між двома ідеями: зроби дві чорнові версії','клієнт вагається — покажи два варіанти','два замовлення одночасно: не демпінгуй жодне'],
+  ['Трійка','Трійка','командна робота: поклич когось на звук чи колір','клієнт приведе подругу — зроби вау','перший прибуток від співпраці — ділись чесно'],
+  ['Четвірка','Четвірка','стабільність: шаблон проєкту зекономить години','постійний клієнт — бережи його','відклади 10% — подушка на тихі місяці'],
+  ['П’ятірка','П’ятірка','хаос у футажах: спершу розклади все по папках','непорозуміння з клієнтом — домовляйся письмово','оплата затримується. нагадай ввічливо, але твердо'],
+  ['Шістка','Шістка','допомога прийде: ассети, плагін чи порада','клієнт порекомендує тебе далі','чесний обмін: робота = оплата, а не «за відгук»'],
+  ['Сімка','Сімка','не розпорошуйся: обери один головний проєкт','клієнт тисне — тримай свої умови','не купуй курс «мільйон на монтажі за тиждень»'],
+  ['Вісімка','Вісімка','монтуєш швидко як ніколи — тримай темп','повідомлень лавина — відповідай по черзі','гроші приходять швидко, якщо рахунок надіслано одразу'],
+  ['Дев’ятка','Дев’ятка','майже фінал: ще одна перевірка звуку','клієнт майже задоволений — дотисни деталь','можна дозволити собі нову техніку'],
+  ['Десятка','Десятка','великий етап завершено — в портфоліо його','клієнтів забагато: час підняти ціну','повний гаманець. плануй новий рівень'],
+  ['Стажер','Паж','вчися: спробуй новий стиль монтажу','клієнт-новачок: поясни все простими словами','маленькі гроші, великий досвід. але недовго'],
+  ['Фрілансер','Лицар','рвонеш уперед: бери дедлайн і лети','швидкий клієнт — швидке рішення','ризикова угода — тільки з передоплатою'],
+  ['Продюсерка','Королева','доглянь проєкт до дрібниць — і буде шедевр','турботлива клієнтка, яка цінує якість','гроші прийдуть через надійні знайомства'],
+  ['Директор','Король','бери відповідальність: ти тут головна','клієнт-директор: коротко, чітко, по ділу','великий бюджет — називай ціну впевнено'],
+];
+const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
+function pips(icon,n){
+  const cols=n<=3?1:n<=6?2:3, rows=Math.ceil(n/cols), sz=Math.min(78/cols,78/rows)*.82; let out='';
+  for(let k=0;k<n;k++){
+    const r=Math.floor(k/cols), inRow=Math.min(cols,n-r*cols), c=k%cols;
+    const cx=50+(c-(inRow-1)/2)*(80/cols), cy=50+(r-(rows-1)/2)*(80/rows);
+    out+=`<g transform="translate(${(cx-sz/2).toFixed(1)} ${(cy-sz/2).toFixed(1)}) scale(${(sz/20).toFixed(3)})" stroke-width="${(2.4*20/sz).toFixed(2)}">${icon}</g>`;
+  }
+  return out;
+}
+SUITS.forEach(([sn,sg,classicG,sphere,icon])=>{
+  RANKS.forEach(([rn,classicR,p,c,m],ri)=>{
+    const n=ri+1, court=n>10;
+    let art;
+    if(!court) art=S(pips(icon,n));
+    else { const extra=n===11?`<circle cx="50" cy="16" r="3" fill="${P}" stroke="none"/>`:n===12?`<path d="M44 18l6-8 6 8" stroke="${P}"/>`:`<path d="M36 20l4-10 10 7 10-7 4 10z" stroke="${P}"/>`;
+      art=S(`<g transform="translate(22 26) scale(2.8)" stroke-width=".95">${icon}</g>${extra}`); }
+    DECK.push([n===1?'Туз':court?'✦':ROMAN[n], `${rn} ${sg}`, `${classicR} ${classicG}`, art, p, c, m, sphere]);
+  });
+});
+const POS=['проєкт','клієнт','гроші'];
+const BACK=`<svg viewBox="0 0 100 100" fill="none" stroke="${G}" stroke-width="2"><circle cx="50" cy="50" r="30"/><path d="M50 14v72M14 50h72" opacity=".5"/><path d="M50 30l5 15 15 5-15 5-5 15-5-15-15-5 15-5z" fill="${P}" stroke="none"/><path d="M44 46l10 4-10 4z" fill="${C}" stroke="none"/></svg>`;
+
+const $=id=>document.getElementById(id);
+const cardHTML=(i,open=false,label='')=>{const d=DECK[i];return `<div class="tc${open?' open':''}"><div class="flip">
+  <div class="face back">${BACK}<b>${label}</b></div>
+  <div class="face front"><div class="num">${d[0]}</div><div class="art">${d[3]}</div><div class="nm">${d[1]}<small>${d[2]}</small></div></div>
+</div></div>`};
+
+let order=[], picks=[]; const ON_TABLE=21;
+function shuffle(){
+  order=DECK.map((_,i)=>i); for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+  order=order.slice(0,ON_TABLE); // 21 of the 78 cards on the table each shuffle
+  picks=[];
+  $('deck').className='deck';
+  $('deck').innerHTML=order.map((ci,k)=>`<button type="button" data-k="${k}" aria-label="карта ${k+1}">${cardHTML(ci)}</button>`).join('');
+  for(let s=0;s<3;s++){const h=$('h'+s); h.className='hole'; h.innerHTML=['тут буде перша карта','друга','третя'][s];}
+  $('reading').hidden=true; $('count').textContent='0 / 3'; $('step').textContent='обери 3 карти';
+}
+$('deck').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b||picks.length>=3) return;
+  const ci=order[+b.dataset.k]; picks.push(ci); b.classList.add('taken');
+  const s=picks.length-1, h=$('h'+s);
+  h.className=''; h.style.width='100%'; h.innerHTML=cardHTML(ci);
+  void h.offsetWidth; setTimeout(()=>h.querySelector('.tc').classList.add('open'),60);
+  $('count').textContent=picks.length+' / 3';
+  if(picks.length===3){ $('deck').classList.add('done'); $('step').textContent='розклад готовий'; setTimeout(showReading,900); }
+});
+function showReading(){
+  $('rows').innerHTML=picks.map((ci,s)=>{const d=DECK[ci];return `<div class="r"><div class="k">${s+1} · ${POS[s]}</div><div class="n">${d[7]?d[1]:d[0]+' · '+d[1]}</div><div class="v">${d[4+s]}</div>${d[7]?`<div class="k" style="color:var(--dim);letter-spacing:.04em;text-transform:none">молодший аркан · сфера: ${d[7]}</div>`:`<div class="k" style="color:var(--dim);letter-spacing:.04em;text-transform:none">старший аркан · ${d[2]}</div>`}</div>`}).join('')
+   + `<div class="r sum"><div class="k">порада тижня</div><div class="v">${summary()}</div></div>`;
+  $('reading').hidden=false;
+  $('reading').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function summary(){
+  const names=picks.map(i=>DECK[i][1]);
+  const hard=['Видалений проєкт','29 правок','Краш','Клієнт зник','Чекаю фідбек'].filter(n=>names.includes(n)).length;
+  const money=picks.filter(i=>DECK[i][7]==='гроші і стабільність').length;
+  if(hard>=2) return 'тиждень з викликами: бекап, договір і передоплата — твої три талісмани';
+  if(names.some(n=>['Клієнтка мрії','Вірусний рілс','Оплата прийшла','Відгук'].includes(n))) return 'зірки на твоєму боці. найкращий час підняти прайс і показати роботи';
+  if(money>=2) return 'тиждень про гроші: перерахуй прайс і надішли всі рахунки';
+  return 'спокійний робочий тиждень. роби по плану — і карти зіграють за тебе';
+}
+$('shuffle').addEventListener('click',shuffle);
+$('sDate').textContent=new Date().toLocaleDateString('uk-UA');
+shuffle();
+
+// ---------- frames for the Threads post: ?shot=pick  |  ?shot=one&id=N&pos=0..2 ----------
+const q=new URLSearchParams(location.search);
+if(q.get('shot')){
+  document.body.classList.add('shot');
+  const top=`<div class="s-top"><span>таро монтажера</span><span>розклад на тиждень</span></div>`;
+  const foot=`<div class="sf"><span>своє таро — за посиланням у треді</span><b>@video_shkolyarka</b></div>`;
+  if(q.get('shot')==='all'){ // contact sheet of the whole deck
+    $('shot').style.cssText='display:grid;width:1600px;height:auto;grid-template-columns:repeat(10,1fr);gap:14px;padding:30px;grid-template-rows:none';
+    $('shot').innerHTML=DECK.map((_,i)=>cardHTML(i,true)).join('');
+  } else if(q.get('shot')==='pick'){
+    $('shot').innerHTML=top+`<h2>обери<br><span>карту</span></h2><div class="row">${[1,2,3].map((n,k)=>`<div class="pickn">${cardHTML(k,false,'')}<span>${n}</span></div>`).join('')}</div>`+foot;
+  } else {
+    const id=+(q.get('id')||0), pos=+(q.get('pos')||0), d=DECK[id];
+    $('shot').innerHTML=top+`<h2>карта <span>${pos+1}</span></h2><div class="one">${cardHTML(id,true)}<div class="t"><div class="k">${POS[pos]}</div><div class="v">${d[4+pos]}</div>${pos!==2?`<div class="a">гроші: ${d[6]}</div>`:''}</div></div>`+foot;
+  }
+}
+</script>
+
+</body>
+</html>
